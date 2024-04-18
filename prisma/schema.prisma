@@ -1,0 +1,207 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model discharge { //토출
+  id                     Int     @id @default(autoincrement())
+  category               String?  // 분류
+  part_name              String?  // 제품명
+  operation_method       String?  // 작동방식
+SUPPROT_PASTE        SUPPROT_PASTE? @default(EVERYTHING) // paste지원
+  viscosity              Int?  // 점도
+  specific_gravity       Int?  // 비중
+  SUPPLY_FORM         SUPPLY_FORM?  @default(EVERYTHING) // 제공형태
+  ONE_COMPONENT_OR_TWO   ONE_COMPONENT_OR_TWO?  @default(EVERYTHING) //1액형/2액형
+  discharge_accuracy     Int?  // 토출 정밀도
+  median_discharge_amount Float?  // 토출량 중간값(min)
+  FILLER_SUPPORT           FILLER_SUPPORT? @default(EVERYTHING) // FILLER 지원
+  CURING_CONDITIONS      CURING_CONDITIONS? @default(EVERYTHING) // 경화 조건(제한 유무)
+  AUTOMATION             AUTOMATION? @default(EVERYTHING) // automation
+  HOW_TO_USE_IT            HOW_TO_USE_IT?  @default(EVERYTHING) //howToUseIt
+  USE_TWO_COMPONENT_CARTRIDGE USE_TWO_COMPONENT_CARTRIDGE @default(EVERYTHING) //2액형카트리지 사용유무
+  keywords               String?  // 키워드
+  control             String?  // 제어테이블
+  supply                  String? //공급테이블
+  etc                  String? //기타테이블
+  primeCost                  Int? //원가
+  userKRW                  Int? //End user(KRW)
+  userUSD                Int? //End user(USD)
+}
+
+
+model supply { //공급
+  id                  Int     @id @default(autoincrement())
+  category            String?  // 분류
+  part_name        String?  // 제품명
+  SUPPLY_FORM         SUPPLY_FORM?  @default(EVERYTHING) // 제공형태
+  supply_capacity_L   Float?  // 공급 용량(L)
+  SUPPROT_PASTE        SUPPROT_PASTE? @default(EVERYTHING) // paste지원
+  viscosity           Int?  // 점도
+  specific_gravity    Int?  // 비중
+  max_discharge_amount Int?  // 최대 토출량 g/sec
+  HIGH_LOW_PRICE      HIGH_LOW_PRICE? @default(EVERYTHING) // 고가/저가
+  keywords            String?  // 키워드
+  etc                  String? //기타테이블
+  application           String? //어플리케이션테이블
+  discharge           String?  // 토출
+  primeCost                  Int? //원가
+  userKRW                  Int? //End user(KRW)
+  userUSD                Int? //End user(USD)
+}
+
+model control {//제어
+  id                             Int     @id @default(autoincrement())
+  category                       String?  // 분류
+  part_name                  String?  // 제품명
+  primeCost                  Int? //원가
+  userKRW                  Int? //End user(KRW)
+  userUSD                Int? //End user(USD)
+}
+
+model application {
+  id                  Int     @id @default(autoincrement())
+  category            String?  // 분류
+  part_name         String?  // 제품명
+  viscosity           Int?  // 점도
+  FILLER_SUPPORT           FILLER_SUPPORT? @default(EVERYTHING)  // FILLER 지원
+  SUPPLY_FORM         SUPPLY_FORM?  @default(EVERYTHING)  // 공급형태
+  ONE_COMPONENT_OR_TWO   ONE_COMPONENT_OR_TWO?  @default(EVERYTHING) //1액형/2액형
+  discharge_accuracy  Int?  // 토출 정밀도
+  HIGH_LOW_PRICE      HIGH_LOW_PRICE? @default(EVERYTHING)  // 저가/고가
+  mixing_ratio        Int?  // Mixing Ratio
+  keywords            String?  // 키워드
+  primeCost                  Int? //원가
+  userKRW                  Int? //End user(KRW)
+  userUSD                Int? //End user(USD)
+}
+
+model robot {
+  id                  Int     @id @default(autoincrement())
+  category            String?  // 분류
+  part_name         String?  // 제품명
+  product_size_X Int? // 대응 제품 크기-X
+  product_size_Y Int? // 대응 제품 크기-Y
+  product_size_Z Int? // 대응 제품 크기-Z
+  HIGH_LOW_PRICE      HIGH_LOW_PRICE? @default(EVERYTHING)  // 저가/고가
+  keywords            String?  // 키워드
+  etc                  String? //기타테이블
+  primeCostUSD          Int? //원가(USD)
+  userKRW                  Int? //End user(KRW)
+  userUSD                Int? //End user(USD)
+}
+
+model etc {
+  id                        Int     @id @default(autoincrement())
+  category                  String?  // 분류
+  part_name                  String?  // 부품명
+  price                     Int?  // 가격
+}
+
+model question {
+  id                        Int     @id @default(autoincrement())
+  questionType      questionType?   @default(ShortAnswer)//주관식,객관식,복합형
+  questionTitle             String?     //액상 각각의 액형은 무엇인가?
+questionNumber            String? //질문번호
+}
+
+model MultipleChoiceQuestion {
+  id                        Int     @id @default(autoincrement())
+  questionNumber            String? //질문번호
+  option1                   String?    
+  option2                   String?    
+  option3                   String?    
+  option4                   String?    
+  option5                   String?    
+  option6                   String?    
+  option7                   String?    
+}
+
+model ShortAnswerQuestion {
+  id                        Int     @id @default(autoincrement())
+  questionNumber            String? //질문번호
+  option1                   String?    
+  option2                   String?    
+  option3                   String?   
+}
+
+enum questionType{
+  ShortAnswer
+  MultipleChoice
+  CompoundType
+}
+
+enum ONE_COMPONENT_OR_TWO {
+    ONE_COMPONENT
+    TWO_COMPONENT
+    EVERYTHING
+}
+
+enum USE_TWO_COMPONENT_CARTRIDGE {
+    YES
+    NO
+    EVERYTHING
+}
+
+enum SUPPROT_PASTE {
+    YES
+    NO
+    EVERYTHING
+}
+
+enum HOW_TO_USE_IT {
+    LINE_DISPENSING
+    DOT_DISPENSING
+    LINE_DISPENSING_OR_DOT_DISPENSING
+    MOLDING_FILLING_METERING_VALVE
+    UNDERFILLING
+    SEALING
+    CONFORMAL_COATING_SPRAYING_SPRAY_VALVE
+    EVERYTHING
+}
+
+enum FILLER_SUPPORT {
+    YES
+    NO
+    EVERYTHING
+}
+
+enum CURING_CONDITIONS {
+    WATER_REACTION
+    ANAEROBIC_REACTION
+    ROOM_TEMPERATURE
+    UV_CURING
+    TWO_COMPONENT_CURING
+    HEATED_CURING
+    NOT_CURING
+    EVERYTHING
+}
+
+enum SUPPLY_FORM {
+    BARREL_SYRINGE
+    CARTRIDGE
+    TANK
+    CAN_DRUM
+    TANK_OR_CAN_DRUM
+    EXCEPT_TANK_OR_CAN_DRUM
+    EVERYTHING
+}
+
+enum AUTOMATION {
+    MANUAL
+    Automated
+    EVERYTHING
+}
+
+enum HIGH_LOW_PRICE {
+    HIGH_PRICE
+    LOW_PRICE
+    EVERYTHING
+}
+
