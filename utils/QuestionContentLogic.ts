@@ -348,13 +348,13 @@ function QuestionContentLogic({
     //discharge 토출량
     //제약식 1번)barrel,카트리지는 여기서 살아있었던 없었던 무조건 부활시켜서 discharge에 포함시키기(이건 mostclose파일에적용함)
     try {
-      const response = await dischargeSearchMostClose("median_discharge_amount", textFieldValue, parts.discharge); //response엔 바렐+카트리지+살아남은놈하나
+      const response = await dischargeSearchMostClose("median_discharge_amount", textFieldValue, parts.discharge); //response엔 바렐+카트리지+살아남은놈다섯
       const responseMMA = await getRowData("discharge", "part_name", "MMA");
       if (parts.discharge.includes(responseMMA.data[0].id)) {
         //만약 MMA가 살아있었으면
         console.log("7번질문 1제약식");
         let arrForMMA = [];
-        arrForMMA.push(responseMMA.data[0].id); //mma+살아남은놈+토출+카트리지 하자
+        arrForMMA.push(responseMMA.data[0].id); //mma+살아남은놈 다섯+토출+카트리지 하자
         for (let i = 0; i < response.data.length; i++) {
           arrForMMA.push(response.data[i].id);
         }

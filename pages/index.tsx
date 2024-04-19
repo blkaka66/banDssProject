@@ -43,9 +43,10 @@ function QuestionPage() {
   const [shortAnswerValues, setShortAnswerValues] = useState<string[]>([]);
   const [partItem, setPartItem] = useRecoilState(partsItem);
   const handleNextBtn = async (isNext: boolean) => {
+    console.log("^^^^")
     const trueKeys = Object.keys(checkedItems).filter((key) => checkedItems[key]);
     const choiceItem = trueKeys[0];
-
+    console.log(isNext)
     const updatedResponse = { ...userResponse, [questionNumber]: { shortAnswerValues, choiceItem } };
     console.log("updatedResponse", updatedResponse);
     setUserResponse(updatedResponse);

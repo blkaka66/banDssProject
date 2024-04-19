@@ -1,28 +1,26 @@
 import React, { useEffect } from 'react';
 import { PaperClipIcon } from '@heroicons/react/20/solid';
 
-// const res = {
-//   2: { shortAnswerValues: [], choiceItem: 'ONE_COMPONENT' },
-//   4: { shortAnswerValues: [], choiceItem: 'DOT_DISPENSING' },
-//   5: { shortAnswerValues: ["2"], choiceItem: 'NO' },
-//   6: { shortAnswerValues: [] },
-//   7: { shortAnswerValues: [] },
-//   8: { shortAnswerValues: [] },
-//   9: { shortAnswerValues: [], choiceItem: 'NO' },
-//   10: { shortAnswerValues: [], choiceItem: 'ANAEROBIC_REACTION' },
-//   11: { shortAnswerValues: [], choiceItem: 'TANK' },
-//   12: { shortAnswerValues: [], choiceItem: 'Automated' },
-//   13: { shortAnswerValues: ["10","20","30"] , choiceItem: 'aa' },
-//   14: { shortAnswerValues: [], choiceItem: 'LOW_PRICE' }
-// };
+const res = {
+  2: { shortAnswerValues: [], choiceItem: 'ONE_COMPONENT' },
+  4: { shortAnswerValues: [], choiceItem: 'DOT_DISPENSING' },
+  5: { shortAnswerValues: ["2"], choiceItem: 'NO' },
+  6: { shortAnswerValues: [] },
+  7: { shortAnswerValues: [] },
+  8: { shortAnswerValues: [] },
+  9: { shortAnswerValues: [], choiceItem: 'NO' },
+  10: { shortAnswerValues: [], choiceItem: 'ANAEROBIC_REACTION' },
+  11: { shortAnswerValues: [], choiceItem: 'TANK' },
+  12: { shortAnswerValues: [], choiceItem: 'Automated' },
+  13: { shortAnswerValues: ["10","20","30"] , choiceItem: 'aa' },
+  14: { shortAnswerValues: [], choiceItem: 'LOW_PRICE' }
+};
+
 function UserResponseLog(res:any) {
-  console.log(res)
-  console.log("^^")
+  useEffect(() => {
+    console.log("666");
+  }, []);
 
-
-  useEffect(()=>{
-    console.log("666")
-  },[])
   return (
     <div className="overflow-hidden bg-white shadow sm:rounded-lg">
       <div className="px-4 py-6 sm:px-6">
@@ -32,17 +30,19 @@ function UserResponseLog(res:any) {
       <div className="border-t border-gray-100">
         <dl className="divide-y divide-gray-100">
           {Object.keys(res).map((key) => {
-            const { shortAnswerValues, choiceItem } = res[key];
-            if (shortAnswerValues.length === 0 && choiceItem === undefined) {
-              return null; // 조건에 맞지 않으면 null 반환하여 아무것도 표시하지 않음
-            }
+            const item = res[key];
+            if (!item) return null;
+
+            const { shortAnswerValues, choiceItem } = item;
+            if (!shortAnswerValues && !choiceItem) return null;
+
             return (
               <div key={key} className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-900">{`${key}번질문`}</dt>
                 <div className='flex justify-between'>
                   <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{choiceItem}</dd>
-                  {shortAnswerValues.length===1 && <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{shortAnswerValues[0]}</dd>}
-                  {shortAnswerValues.length>1 && (
+                  {shortAnswerValues?.length === 1 && <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{shortAnswerValues[0]}</dd>}
+                  {shortAnswerValues?.length > 1 && (
                     <div className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                       <ul className="flex flex-wrap gap-2">
                         {shortAnswerValues.map((value, index) => (

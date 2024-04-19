@@ -6,15 +6,12 @@ import { ApplicationDTO, ControlDTO, EtcDTO, RobotDTO, SupplyDTO, DischargeDTO }
 import { useRouter } from 'next/router';
 import { PaperClipIcon } from '@heroicons/react/20/solid';
 import UserResponseLog from './UserResponseLog';
+import Modal from './modal';
 
 
-function handleCheckClientLogBtn(userRes:any){ //이게아니라 그 뭐냐 그 usestate로해야한다.
-  return <UserResponseLog res={userRes} />;
-}
 
 function parseUserResponse(userResponse:any){
   const responseString = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-
   let parsedData = null;
   try {
     if(responseString){
@@ -28,6 +25,8 @@ function parseUserResponse(userResponse:any){
 
 function StaffPage() {
   const [partItem, setPartItem] = useRecoilState(partsItem);
+
+
   // const partItem: {
   //   application: ApplicationDTO[];
   //   control: ControlDTO[];
@@ -230,6 +229,9 @@ function StaffPage() {
     totalPrimeCostApplication +
     totalPrimeCostEtc;
 
+  function handleCheckClientLogBtn(){ //이게아니라 그 뭐냐 그 usestate로해야한다.
+    setShowUserResponseLog(true);
+  }
   return (
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -240,11 +242,17 @@ function StaffPage() {
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
-            onClick={() => handleCheckClientLogBtn(userRes)}
+            onClick={() => handleCheckClientLogBtn()}
             className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             고객의 대답 기록
           </button>
+          {showUserResponseLog && 
+            <Modal isOpen="true" onClose={() => setShowUserResponseLog(false)}>
+              <UserResponseLog res={userRes} />
+            </Modal>
+          }
+
         </div>
       </div>
       <div className="mt-8 flow-root">
@@ -276,7 +284,6 @@ function renderTableSection(title:any, items:any, totalPrimeCost:any) {
   return (
     <Fragment>
       <thead className="bg-white">
-        
         {renderPartItemsHeader(title, totalPrimeCost)}
       </thead>
       <tbody className="bg-white">
