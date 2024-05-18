@@ -935,49 +935,52 @@ async function QuestionContentLogic({
           await highLowPrice(); //원래대로 하던거
           await setPartsState(partsMap);
         }
-      }
+      
  //제약식2)가격으로 판단하기 전에 4번답이 line이나 dot이고 2번 답이 2액형 이었으면
       // 토출의BV-T900,BV-T900-MINI살아남았으면 얘네만 남기기
-      else if (userResponse[2].choiceItem === "TWO_COMPONENT") {
-        //2번답이 2액형이었으면
-        let arrTwoComponents = [];
-        const responseBVT900 = await getRowData("discharge", "part_name", "BV-T900");
-        const responseBVT900MINI = await getRowData("discharge", "part_name", "BV-T900-MINI");
-        if (parts.discharge.includes(responseBVT900.data[0].id)) {
-          //t900이 포함돼있다면
-          console.log("14번질문 2제약식");
-          arrTwoComponents = [];
-          arrTwoComponents.push(responseBVT900.data[0].id);
-          parts.discharge= [...arrTwoComponents];
-          partsMap.set(liquidIndex,parts);
-          // parts = {
-          //   ...parts,
-          //   discharge: [...responseBVT900],
-          // };
-        }
-        if (parts.discharge.includes(responseBVT900MINI.data[0].id)) {
-          //t900mini이 포함돼있다면
-          console.log("14번질문 2제약식");
-          arrTwoComponents.push(responseBVT900MINI.data[0].id);
-          parts.discharge= [...arrTwoComponents];
-          partsMap.set(liquidIndex,parts);
-          // parts = {
-          //   ...parts,
-          //   discharge: [...responseBVT900MINI],
-          // };
-        } else if (!parts.discharge.includes(responseBVT900.data[0].id) && !parts.discharge.includes(responseBVT900MINI.data[0].id)) {
-          //위에 2개다 없으면 고대로 진행
-          await highLowPrice(); //원래대로 하던거
-        }
 
-        await highLowPrice(); //원래대로 하던거
-        await setPartsState(partsMap);
-      }
+        else if (userResponse[2].choiceItem === "TWO_COMPONENT") {
+          //2번답이 2액형이었으면
+          let arrTwoComponents = [];
+          const responseBVT900 = await getRowData("discharge", "part_name", "BV-T900");
+          const responseBVT900MINI = await getRowData("discharge", "part_name", "BV-T900-MINI");
+          if (parts.discharge.includes(responseBVT900.data[0].id)) {
+            //t900이 포함돼있다면
+            console.log("14번질문 2제약식");
+            arrTwoComponents = [];
+            arrTwoComponents.push(responseBVT900.data[0].id);
+            parts.discharge= [...arrTwoComponents];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...responseBVT900],
+            // };
+          }
+          if (parts.discharge.includes(responseBVT900MINI.data[0].id)) {
+            //t900mini이 포함돼있다면
+            console.log("14번질문 2제약식");
+            arrTwoComponents.push(responseBVT900MINI.data[0].id);
+            parts.discharge= [...arrTwoComponents];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...responseBVT900MINI],
+            // };
+          } else if (!parts.discharge.includes(responseBVT900.data[0].id) && !parts.discharge.includes(responseBVT900MINI.data[0].id)) {
+            //위에 2개다 없으면 고대로 진행
+            await highLowPrice(); //원래대로 하던거
+          }
+  
+          await highLowPrice(); //원래대로 하던거
+          await setPartsState(partsMap);
+        }
+      
     } else {
       //4번답이 line이나 dot이 아니었으면
       await highLowPrice(); //고대로 하던거하기
       await setPartsState(partsMap);
     }
+  }
     prevParts[liquidIndex][questionNumber] = {
       application: parts.application,
       control: parts.control,
