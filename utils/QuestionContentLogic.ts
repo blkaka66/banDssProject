@@ -884,56 +884,59 @@ async function QuestionContentLogic({
 
     if (userResponse[4].choiceItem === "LINE_DISPENSING" || userResponse[4].choiceItem === "DOT_DISPENSING") {
       //4번답이 line이나 dot일때
-      if (userResponse[2].choiceItem === "ONE_COMPONENT") {
-        //2번답이 1액형이었으면
-        let arrOneComponents = [];
-        const responseBV303 = await getRowData("discharge", "part_name", "BV-303");
-        const responseBV325 = await getRowData("discharge", "part_name", "BV-325");
-        const responseBV396 = await getRowData("discharge", "part_name", "BV-396");
-        if (parts.discharge.includes(responseBV303.data[0].id)) {
-          //303이 포함돼있다면
-          console.log("14번질문 1제약식");
-          arrOneComponents = [];
-          arrOneComponents.push(responseBV303.data[0].id);
-          parts.discharge= [...arrOneComponents];
-          partsMap.set(liquidIndex,parts);
-          // parts = {
-          //   ...parts,
-          //   discharge: [...arrOneComponents],
-          // };
-        }
-        if (parts.discharge.includes(responseBV325.data[0].id)) {
-          //325이 포함돼있다면
-          console.log("14번질문 1제약식");
-          arrOneComponents.push(responseBV325.data[0].id);
-          parts.discharge= [...arrOneComponents];
-          partsMap.set(liquidIndex,parts);
-          // parts = {
-          //   ...parts,
-          //   discharge: [...arrOneComponents],
-          // };
-        }
-        if (parts.discharge.includes(responseBV396.data[0].id)) {
-          //396이 포함돼있다면
-          console.log("14번질문 1제약식");
-          arrOneComponents.push(responseBV396.data[0].id);
-          parts.discharge= [...arrOneComponents];
-          partsMap.set(liquidIndex,parts);
-          // parts = {
-          //   ...parts,
-          //   discharge: [...arrOneComponents],
-          // };
-        } else if (
-          !parts.discharge.includes(responseBV303.data[0].id) &&
-          !parts.discharge.includes(responseBV325.data[0].id) &&
-          !parts.discharge.includes(responseBV396.data[0].id)
-        ) {
-          //위에 3개다 없으면 고대로 진행
+      if(userResponse[2]){
+        if (userResponse[2].choiceItem === "ONE_COMPONENT") {
+          //2번답이 1액형이었으면
+          let arrOneComponents = [];
+          const responseBV303 = await getRowData("discharge", "part_name", "BV-303");
+          const responseBV325 = await getRowData("discharge", "part_name", "BV-325");
+          const responseBV396 = await getRowData("discharge", "part_name", "BV-396");
+          if (parts.discharge.includes(responseBV303.data[0].id)) {
+            //303이 포함돼있다면
+            console.log("14번질문 1제약식");
+            arrOneComponents = [];
+            arrOneComponents.push(responseBV303.data[0].id);
+            parts.discharge= [...arrOneComponents];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...arrOneComponents],
+            // };
+          }
+          if (parts.discharge.includes(responseBV325.data[0].id)) {
+            //325이 포함돼있다면
+            console.log("14번질문 1제약식");
+            arrOneComponents.push(responseBV325.data[0].id);
+            parts.discharge= [...arrOneComponents];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...arrOneComponents],
+            // };
+          }
+          if (parts.discharge.includes(responseBV396.data[0].id)) {
+            //396이 포함돼있다면
+            console.log("14번질문 1제약식");
+            arrOneComponents.push(responseBV396.data[0].id);
+            parts.discharge= [...arrOneComponents];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...arrOneComponents],
+            // };
+          } else if (
+            !parts.discharge.includes(responseBV303.data[0].id) &&
+            !parts.discharge.includes(responseBV325.data[0].id) &&
+            !parts.discharge.includes(responseBV396.data[0].id)
+          ) {
+            //위에 3개다 없으면 고대로 진행
+            await highLowPrice(); //원래대로 하던거
+          }
           await highLowPrice(); //원래대로 하던거
+          await setPartsState(partsMap);
         }
-        await highLowPrice(); //원래대로 하던거
-        await setPartsState(partsMap);
-      } //제약식2)가격으로 판단하기 전에 4번답이 line이나 dot이고 2번 답이 2액형 이었으면
+      }
+ //제약식2)가격으로 판단하기 전에 4번답이 line이나 dot이고 2번 답이 2액형 이었으면
       // 토출의BV-T900,BV-T900-MINI살아남았으면 얘네만 남기기
       else if (userResponse[2].choiceItem === "TWO_COMPONENT") {
         //2번답이 2액형이었으면
