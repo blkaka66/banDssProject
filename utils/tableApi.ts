@@ -1,14 +1,14 @@
 import axios from "axios";
-import { disChargeDto, SupplyDTO, ControlDTO, RobotDTO, ApplicationDTO, EtcDTO, QuestionDTO } from "../pages/dto/dto";
+import { DischargeDTO, SupplyDTO, ControlDTO, RobotDTO, ApplicationDTO, EtcDTO, QuestionDTO } from "../pages/dto/dto";
 
 function classificationData(
   tableName: string,
-  data: disChargeDto | SupplyDTO | ControlDTO | RobotDTO | ApplicationDTO | EtcDTO | QuestionDTO 
+  data: DischargeDTO | SupplyDTO | ControlDTO | RobotDTO | ApplicationDTO | EtcDTO | QuestionDTO 
 ) {
   switch (tableName) {
     case "discharge":
       // tableName이 'discharge'일 때는 DischargeDTO 타입으로 데이터를 변환
-      return data as disChargeDto;
+      return data as DischargeDTO;
     case "supply":
       // tableName이 'supply'일 때는 SupplyDTO 타입으로 데이터를 변환
       return data as SupplyDTO;
@@ -34,7 +34,7 @@ function classificationData(
 
 export async function inputData(
   tableName: string,
-  data: disChargeDto | SupplyDTO | ControlDTO | RobotDTO | ApplicationDTO | EtcDTO | QuestionDTO 
+  data: DischargeDTO | SupplyDTO | ControlDTO | RobotDTO | ApplicationDTO | EtcDTO | QuestionDTO 
 ) {
   const classifiedData = classificationData(tableName, data);
 

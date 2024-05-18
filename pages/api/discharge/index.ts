@@ -41,7 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           res.status(200).json({ data: responseData });
         } else if(Name === "ONE_COMPONENT_OR_TWO" || 
         Name === "FILLER_SUPPORT" || 
-        Name === "CURING_CONDITIONS"||
         Name ==="SUPPLY_FORM"||
         Name ==="SUPPROT_PASTE"){ //1액형2액형처럼 everything 갖고있는놈은전부 이렇게하기
           let responseData = await prisma.discharge.findMany({
@@ -52,34 +51,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               ]
             },
           });
-          res.status(200).json({ data: responseData });
+          
+          res.status(200).json({ data: responseData??[] });
         }
-          else if(Name === "HOW_TO_USE_IT"){ //작동방식은 SPRAYING은 SPRAYING만 
-               if (Value === "CONFORMAL_COATING_SPRAYING_SPRAY_VALVE" ){
-                //spray는 spray만
-                let responseData = await prisma.discharge.findMany({
-                  where: {
-                    OR:[
-                      {[`${Name}`]: Value},
-                    ]
-                  },
-                });
-                res.status(200).json({ data: responseData });
-              }
-              else{
-                //그외엔 everything포함 value같은놈
-                let responseData = await prisma.discharge.findMany({
-                  where: {
-                    OR:[
-                      {[`${Name}`]: Value},
-                      {[`${Name}`]: "EVERYTHING"},
-                    ]
-                  },
-                });
-                res.status(200).json({ data: responseData });
-              }
-              
-            }
+        else if(Name === "CURING_CONDITIONS"){ //경화조건 질문에서 
+          if (Value === "ANAEROBIC_REACTION" ){//답변이ANAEROBIC_REACTION이면
+           //spray는 spray만
+           let responseData = await prisma.discharge.findMany({
+             where: {
+               OR:[
+                 {[`${Name}`]: Value},//ANAEROBIC_REACTION만 가져오고
+               ]
+             },
+           });
+           res.status(200).json({ data: responseData });
+         }
+         else{
+           //그외엔 everything포함 value같은놈
+           let responseData = await prisma.discharge.findMany({
+             where: {
+               OR:[
+                 {[`${Name}`]: Value},
+                 {[`${Name}`]: "EVERYTHING"},
+               ]
+             },
+           });
+           res.status(200).json({ data: responseData });
+         }
+         
+       }
+        else if(Name === "HOW_TO_USE_IT"){ //작동방식은 SPRAYING은 SPRAYING만 
+            if (Value === "CONFORMAL_COATING_SPRAYING_SPRAY_VALVE" ){
+            //spray는 spray만
+            let responseData = await prisma.discharge.findMany({
+              where: {
+                OR:[
+                  {[`${Name}`]: Value},
+                ]
+              },
+            });
+            res.status(200).json({ data: responseData });
+          }
+          else{
+            //그외엔 everything포함 value같은놈
+            let responseData = await prisma.discharge.findMany({
+              where: {
+                OR:[
+                  {[`${Name}`]: Value},
+                  {[`${Name}`]: "EVERYTHING"},
+                ]
+              },
+            });
+            res.status(200).json({ data: responseData });
+          }
+          
+        }
   
         
         else {

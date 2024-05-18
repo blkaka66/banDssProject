@@ -6,6 +6,7 @@ import { stringToArr } from "@/utils/stringToArr";
 import { questionType } from "./dto/dto";
 import { Button, TextField } from "@mui/material";
 import NavigateNextOutlinedIcon from "@mui/icons-material/NavigateNextOutlined";
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import questionContentLogic from "@/utils/QuestionContentLogic";
 import { useRecoilState } from "recoil";
 import {
@@ -19,6 +20,8 @@ import {
   relatedPartsItemWithrobotState,
 } from "@/pages/api/state/state";
 
+import RadioList from "@/components/RadioList";
+
 import { useRouter } from "next/router";
 
 function QuestionPage() {
@@ -26,19 +29,26 @@ function QuestionPage() {
   const [relatedPartsWithDischarge, setRelatedPartsWithDischargeState] = useRecoilState(relatedPartsWithdischargeState);
   const [relatedPartWithSupply, setRelatedPartWithSupply] = useRecoilState(relatedPartsWithsupplyeState);
   const [relatedPartWithRobot, setRelatedPartWithRobot] = useRecoilState(relatedPartsWithrobotState);
-  
+  const [liquidIndex, setLiquidIndex]= useState(0);
   const [relatedPartsItemWithDischarge, setRelatedPartsItemWithDischargeState] = useRecoilState(relatedPartsItemWithdischargeState);
   const [relatedPartsItemWithSupplyeState, setRelatedPartsItemWithsupplyeState] = useRecoilState(relatedPartsItemWithsupplyeState);
   const [relatedPartsItemWithRobotState, setRelatedPartsItemWithrobotState] = useRecoilState(relatedPartsItemWithrobotState);
 
   const [parts, setPartsState] = useRecoilState(partsState);
   const [questionData, setQuestionData] = useState<QuestionDTO | null>(null);
-  const [questionNumber, setQuestionNumber] = useState(2);
+  const [questionNumber, setQuestionNumber] = useState(1);
   const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
   //const [textFieldValue, setTextFieldValue] = useState("");
   const [filteredMultipleOptions, setFilteredMultipleOptions] = useState<string[]>([]);
   const [filteredShortAnswer, setFilteredShortAnswer] = useState<string[]>([]);
 
+
+//
+  const [selectedRadio, setSelectedRadio] = useState<string>("");
+  const handleSelectedRadioChange = (value: string) => {
+    setSelectedRadio(value);
+  };
+//
   const [userResponse, setUserResponse] = useState<Record<number, { shortAnswerValues: string[]; choiceItem: string }>>({}); //각 질문에 어떻게답했는지 저장
   const [shortAnswerValues, setShortAnswerValues] = useState<string[]>([]);
   const [partItem, setPartItem] = useRecoilState(partsItem);
@@ -53,7 +63,9 @@ function QuestionPage() {
 
 
 
-    const res = questionContentLogic({
+      questionContentLogic({
+      liquidIndex,
+      setLiquidIndex,
       textFieldValue: shortAnswerValues,
       choiceItem,
       setPartItem,
@@ -66,14 +78,19 @@ function QuestionPage() {
       relatedPartsWithDischarge,
       relatedPartWithSupply,
       relatedPartWithRobot,
+
       setRelatedPartsItemWithDischargeState,
       setRelatedPartsItemWithsupplyeState,
       setRelatedPartsItemWithrobotState,
       userResponse,
+    }).then(res => {
+      console.log("res는 ",res)
+      if (res) {
+        setQuestionNumber(res + questionNumber);
+      }
     });
-    if (res) {
-      setQuestionNumber(res + questionNumber);
-    }
+   
+    
 
     setCheckedItems({});
   };
@@ -153,7 +170,10 @@ function QuestionPage() {
     console.log("discharge와 엮이는 partsItem 변경", relatedPartsItemWithDischarge);
   }, [relatedPartsItemWithDischarge]);
   
-  
+  useEffect(()=>{
+    console.log("liquidIndex바뀜!!")
+    console.log(liquidIndex)
+  },[liquidIndex])
   
   useEffect(()=>{
     console.log("supply와 엮이는 partsItem 변경")
@@ -207,8 +227,23 @@ function QuestionPage() {
   };
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetchQuestion("question", questionNumber);
+        setQuestionData(response);
+      } catch (error) {
+        console.error("Error fetching question: ", error);
+      }
+    };
     console.log("questionNumber",questionNumber)
-    if (questionNumber === 15) {
+    if(questionNumber === 4){
+      if(partItem.discharge.length !== 0){ //최종선정된 discharge가 이미 있다면 두번째 액체 하고있는거
+        console.log("이제 두번째 액체!!")
+        setLiquidIndex(liquidIndex+1);
+        //fetchData();
+      }
+    }
+    else if (questionNumber === 16) {
 
       router.push({
         pathname: "/staffPage",
@@ -219,9 +254,7 @@ function QuestionPage() {
       
       
     } 
-    
-    else {
-      if (questionNumber === 2) { //초기화
+      else if (questionNumber === 2) { //초기화
         console.log("^^")
         setPartsState({  
           application: [],
@@ -240,16 +273,8 @@ function QuestionPage() {
           supply: [],
         });
       }
-      const fetchData = async () => {
-        try {
-          const response = await fetchQuestion("question", questionNumber);
-          setQuestionData(response);
-        } catch (error) {
-          console.error("Error fetching question: ", error);
-        }
-      };
-      fetchData();
-    }
+
+    fetchData();
   }, [questionNumber]);
 
   useEffect(() => {
@@ -323,11 +348,16 @@ function QuestionPage() {
             </>
           )}
         </div>
-        <CheckBox data={filteredMultipleOptions} checkedItems={checkedItems} onCheckedItemsChange={handleCheckedItemsChange} />
+        <RadioList
+        data={filteredMultipleOptions}
+        checkedItems={checkedItems}
+        onCheckedItemsChange={handleCheckedItemsChange}
+      />
+        {/* <CheckBox data={filteredMultipleOptions} checkedItems={checkedItems} onCheckedItemsChange={handleCheckedItemsChange} /> */}
       </div>
       <div>
-        {questionNumber > 2 && (
-          <Button onClick={() => handleNextBtn(false)} variant="contained" size="small" endIcon={<NavigateNextOutlinedIcon />}>
+        {questionNumber > 1 && (
+          <Button onClick={() => handleNextBtn(false)} variant="contained" size="small"endIcon={<NavigateBeforeIcon />} >
             prev
           </Button>
         )}

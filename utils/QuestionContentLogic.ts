@@ -22,21 +22,45 @@ import { relatedPartsWithdischargeState, partsState, relatedPartsItemWithdischar
 import { useEffect } from "react";
 import { arrToStringComma } from "./stringToArr";
 
-let parts: {
+export interface PartItem {
   application: number[];
   control: number[];
   discharge: number[];
   etc: number[];
   robot: number[];
   supply: number[];
-} = {
-  application: [],
-  control: [],
-  discharge: [],
-  etc: [],
-  robot: [],
-  supply: [],
-};
+}
+
+let noDualCartridge = false;
+
+let partsMap = new Map<number, PartItem>();
+function pushNewPartType(liquidIndex:number) {
+  partsMap.set(liquidIndex, {
+    application: [],
+    control: [],
+    discharge: [],
+    etc: [],
+    robot: [],
+    supply: []
+  });
+  prevParts.push([{
+    application: [],
+    control: [],
+    discharge: [],
+    etc: [],
+    robot: [],
+    supply: []
+  },{
+    application: [],
+    control: [],
+    discharge: [],
+    etc: [],
+    robot: [],
+    supply: []
+  }]);
+}
+
+
 
 let prevParts: {
   //각 질문에대한 부품state배열 이전으로가면 parts에 덮어씌운다
@@ -46,26 +70,10 @@ let prevParts: {
   etc: number[];
   robot: number[];
   supply: number[];
-}[] = [
-  {
-    application: [],
-    control: [],
-    discharge: [],
-    etc: [],
-    robot: [],
-    supply: [],
-  },
-];
+}[][] = [];
 
-//지워야함
-prevParts[1] = {
-  application: [],
-  control: [],
-  discharge: [],
-  etc: [],
-  robot: [],
-  supply: [],
-};
+
+
 
 //부품간의 엮이는 부품id를 저장
 let application = {
@@ -79,7 +87,9 @@ let robot = {};
 let supply = {};
 let plusQuestionNumber = 0;
 
-function QuestionContentLogic({
+async function QuestionContentLogic({
+  liquidIndex,
+  setLiquidIndex,
   textFieldValue,
   choiceItem,
   isNext,
@@ -97,6 +107,8 @@ function QuestionContentLogic({
   relatedPartWithSupply,
   relatedPartWithRobot,
 }: {
+  liquidIndex:any,
+  setLiquidIndex:any,
   isNext: boolean;
   userResponse: any;
   textFieldValue: string[];
@@ -115,10 +127,30 @@ function QuestionContentLogic({
   relatedPartWithRobot: any;
 }) {
   if (isNext === true) {
+
+    const parts = {...partsMap.get(liquidIndex) }
+    console.log("parts",parts);
+    console.log("liquidindex:",liquidIndex);
     switch (questionNumber) {
+      case 1:
+        for(let i =0; i<Number(textFieldValue[0]); i++){
+          pushNewPartType(i);
+        }
+
+        const parts = {...partsMap.get(0) }
+        const partsa = {...partsMap.get(1) }
+        console.log("parts",parts);
+        console.log("partsa",partsa);
+        if(textFieldValue[0] === "1"){//1번질문에서 2미만이라고 대답하면 2번질문 (1,2액형),3번질문스킵
+          plusQuestionNumber = 3;
+        }
+        else{
+          plusQuestionNumber = 1;
+        }
+        break;
       case 2:
         console.log("2번질문");
-        questionNumber2(choiceItem, questionNumber);
+        await questionNumber2(liquidIndex,choiceItem,questionNumber);
         if (choiceItem === ONE_COMPONENT_OR_TWO.ONE_COMPONENT) {
           plusQuestionNumber = 2;
         } else if (choiceItem === ONE_COMPONENT_OR_TWO.TWO_COMPONENT) {
@@ -126,44 +158,61 @@ function QuestionContentLogic({
         }
         break;
       case 3:
-        questionNumber3(choiceItem, textFieldValue[0], questionNumber);
+        await questionNumber3(liquidIndex,choiceItem, textFieldValue[0], questionNumber);
         plusQuestionNumber = 1;
         break;
       case 4:
         console.log(choiceItem);
-        questionNumber4(choiceItem, questionNumber);
+        await questionNumber4(liquidIndex,choiceItem, questionNumber);
         plusQuestionNumber = 1;
         break;
       case 5:
-        questionNumber5(choiceItem, textFieldValue[0], questionNumber);
-        plusQuestionNumber = 1;
+        await questionNumber5(liquidIndex,choiceItem, textFieldValue[0], questionNumber);
+        
+        if(noDualCartridge){//4,5,8,9,10번 다시물어보는 케이스면 
+          plusQuestionNumber=3;
+        }
+        else{
+          plusQuestionNumber = 1;
+        }
         break;
       case 6:
-        questionNumber6(textFieldValue[0], questionNumber);
+        await questionNumber6(liquidIndex,textFieldValue[0], questionNumber);
         plusQuestionNumber = 1;
         break;
       case 7:
-        questionNumber7(textFieldValue[0], questionNumber);
+        await questionNumber7(liquidIndex,textFieldValue[0], questionNumber);
         plusQuestionNumber = 1;
         break;
       case 8:
-        questionNumber8(textFieldValue[0], questionNumber);
+        await questionNumber8(liquidIndex,textFieldValue[0], questionNumber);
         plusQuestionNumber = 1;
         break;
       case 9:
-        questionNumber9(choiceItem, questionNumber);
+        await questionNumber9(liquidIndex,choiceItem, questionNumber);
         plusQuestionNumber = 1;
         break;
       case 10:
-        questionNumber10(choiceItem, questionNumber);
-        plusQuestionNumber = 1;
+        await questionNumber10(liquidIndex,choiceItem, questionNumber);
+        console.log("noDualCartridge",noDualCartridge)
+        if(noDualCartridge){//4,5,8,9,10번 다시물어보는 케이스면 
+          console.log("여기여기여기여기")
+          console.log(userResponse[14].choiceItem)
+          await priceSelection(userResponse[14].choiceItem);
+          await sortNotUseDualCarttridgeCase();
+          await showAllParts();
+          plusQuestionNumber=5;//이제 끝났으니까 바로 
+        }
+        else{
+          plusQuestionNumber = 1;
+        }
         break;
       case 11:
-        questionNumber11(choiceItem, textFieldValue[0], questionNumber);
+        await questionNumber11(liquidIndex,choiceItem, textFieldValue[0], questionNumber);
         plusQuestionNumber = 1;
         break;
       case 12:
-        questionNumber12(choiceItem, questionNumber);
+        await questionNumber12(liquidIndex,choiceItem, questionNumber);
         if (choiceItem === AUTOMATION.MANUAL) {
           plusQuestionNumber = 2;
         } else if (choiceItem === AUTOMATION.Automated) {
@@ -171,73 +220,109 @@ function QuestionContentLogic({
         }
         break;
       case 13:
-        questionNumber13(textFieldValue, questionNumber);
+        await questionNumber13(liquidIndex,textFieldValue, questionNumber);
         plusQuestionNumber = 1;
         break;
       case 14:
-        questionNumber14(choiceItem, questionNumber);
-        plusQuestionNumber = 1;
-        break;
+       await questionNumber14(liquidIndex,choiceItem, questionNumber)
+       await finalPartUpdate(liquidIndex);
+       await showAllParts();
+       console.log(userResponse[1].shortAnswerValues[0])
+       if(userResponse[1].shortAnswerValues[0]==="2"){//1번 질문에 2라고 대답 하였을 경우, 
+        if(userResponse[2].choiceItem==="ONE_COMPONENT"){//1) 2번 질문에 1액형이라고 대답하였을 경우
+          if(liquidIndex === 0){//그리고 첫번째 액체만한경우
+            plusQuestionNumber=-10;//4번부터 12번까지 전체 질문 X2
+          }
+          
+        }
+        else if(userResponse[2].choiceItem==="TWO_COMPONENT"){//2번 질문에 2액형이라고 대답했을 경우
+          if(userResponse[3].choiceItem==="NO" && noDualCartridge===false){//2액형 카트리지가 아닌경우 
+            noDualCartridge=true;
+            plusQuestionNumber=-10;//4,5,8,9,10번 질문만 다시물어보기
+          }
+        }
+       }
+       else{//1번 질문에 1라고 대답 하였을 경우, 
+        plusQuestionNumber=0;//그대로 시마이
+      }
+       break;  
     }
-  } else if (isNext === false) {
+  } else if (isNext === false) { //이전 버튼눌렀을때
+    console.log("이전버튼!!")
     for (let i = 1; i < prevParts.length; i++) {
       if (prevParts[questionNumber - i] !== undefined) {
         plusQuestionNumber = -i;
         if (prevParts[questionNumber - i - 1] !== undefined) {
+          let parts = {...partsMap.get( - i - 1) }
           parts = {
-            application: prevParts[questionNumber - i - 1].application,
-            control: prevParts[questionNumber - i - 1].control,
-            discharge: prevParts[questionNumber - i - 1].discharge,
-            etc: prevParts[questionNumber - i - 1].etc,
-            robot: prevParts[questionNumber - i - 1].robot,
-            supply: prevParts[questionNumber - i - 1].supply,
+            application: prevParts[liquidIndex][questionNumber - i - 1].application,
+            control: prevParts[liquidIndex][questionNumber - i - 1].control,
+            discharge: prevParts[liquidIndex][questionNumber - i - 1].discharge,
+            etc: prevParts[liquidIndex][questionNumber - i - 1].etc,
+            robot: prevParts[liquidIndex][questionNumber - i - 1].robot,
+            supply: prevParts[liquidIndex][questionNumber - i - 1].supply,
           };
+          partsMap.set(liquidIndex,parts);
         } else {
+          let parts = {...partsMap.get( - i ) }
           //이전 질문이 조건부 질문인데 내질문이 해당안됐다면
           parts = {
-            application: prevParts[questionNumber - i].application,
-            control: prevParts[questionNumber - i].control,
-            discharge: prevParts[questionNumber - i].discharge,
-            etc: prevParts[questionNumber - i].etc,
-            robot: prevParts[questionNumber - i].robot,
-            supply: prevParts[questionNumber - i].supply,
+            application: prevParts[liquidIndex][questionNumber - i].application,
+            control: prevParts[liquidIndex][questionNumber - i].control,
+            discharge: prevParts[liquidIndex][questionNumber - i].discharge,
+            etc: prevParts[liquidIndex][questionNumber - i].etc,
+            robot: prevParts[liquidIndex][questionNumber - i].robot,
+            supply: prevParts[liquidIndex][questionNumber - i].supply,
           };
+          partsMap.set(liquidIndex,parts);
         }
-
+        console.log("plusQuestionNumber!!",plusQuestionNumber)
         break;
       }
     }
   }
-
+  console.log("questionNumber",questionNumber);
   return plusQuestionNumber;
 
-  async function questionNumber2(choiceItem: string, questionNumber: number) {
+
+
+
+
+
+  async function questionNumber2(liquidIndex:number,choiceItem: string, questionNumber: number) {
+    const parts = partsMap.get(liquidIndex);
     //discharge,application영향
     try {
+      
+
       const response = await getRowData("discharge", "ONE_COMPONENT_OR_TWO", choiceItem);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
     //application 거르기
     try {
       const response = await getRowData("application", "ONE_COMPONENT_OR_TWO", choiceItem);
-      await inputApplicationData(questionNumber, response);
-      await setPartsState(parts);
+      await inputApplicationData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
     //discharge 부품과 엮이는부품 저장
-    await dischargeRelatedParts();
+    //await dischargeRelatedParts();
+    console.log("partsMap.get(liquidIndex)");
+    console.log(partsMap.get(liquidIndex));
   }
 
-  async function questionNumber3(choiceItem: string, textFieldValue: string, questionNumber: number) {
+  async function questionNumber3(liquidIndex:number,choiceItem: string, textFieldValue: string, questionNumber: number) {
     //applicaiton, discharge영향
     try {
       const response = await getRowData("discharge", "USE_TWO_COMPONENT_CARTRIDGE", choiceItem);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -245,43 +330,50 @@ function QuestionContentLogic({
     try {
       //처음 application저장하는거니까 전부저장
       const response = await applicationSearchUpper("mixing_ratio", textFieldValue);
-      await inputApplicationData(questionNumber, response);
-      await setPartsState(parts);
+      await inputApplicationData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
     //discharge부품과 엮이는부품 저장
-    await dischargeRelatedParts();
+    //await dischargeRelatedParts();
   }
 
-  async function questionNumber4(choiceItem: string, questionNumber: number) {
+  async function questionNumber4(liquidIndex:number,choiceItem: string, questionNumber: number) {
     // discharge영향
     try {
       const response = await getRowData("discharge", "HOW_TO_USE_IT", choiceItem);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
-    await dischargeRelatedParts();
+    //await dischargeRelatedParts();
   }
 
-  async function questionNumber5(choiceItem: string, textFieldValue: string, questionNumber: number) {
+  async function questionNumber5(liquidIndex:number,choiceItem: string, textFieldValue: string, questionNumber: number) {
     //applicaiton, discharge , supply영향
 
+    if(userResponse[4].choiceItem="CONFORMAL_COATING_SPRAYING_SPRAY_VALVE"){//4번질문에서 CONFORMAL_COATING_SPRAYING_SPRAY_VALVE 선택했는데 
+      if(Number(textFieldValue)>1000){//5번 질문에서 1000초과이면 에러
+        alert("에러!")
+      }
+    }
+    
     //discharge 부분 점도
     try {
       const response = await dischargeSearchUpper("viscosity", textFieldValue);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
-    }
+    } 
     //discharge 부분 PASTE
     try {
       const response = await getRowData("discharge", "SUPPROT_PASTE", choiceItem);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -289,8 +381,9 @@ function QuestionContentLogic({
     //supply 부분 점도
     try {
       const response = await supplySearchUpper("viscosity", textFieldValue);
-      await inputSupplyData(questionNumber, response);
-      await setPartsState(parts);
+      console.log("response",response);
+      await inputSupplyData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -298,8 +391,8 @@ function QuestionContentLogic({
     //supply부분 paste
     try {
       const response = await getRowData("supply", "SUPPROT_PASTE", choiceItem);
-      await inputSupplyData(questionNumber, response);
-      await setPartsState(parts);
+      await inputSupplyData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -307,24 +400,24 @@ function QuestionContentLogic({
     //applicaiton 부분 점도
     try {
       const response = await applicationSearchUpper("viscosity", textFieldValue);
-      await inputApplicationData(questionNumber, response);
-      await setPartsState(parts);
+      await inputApplicationData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
 
-    await dischargeRelatedParts();
-    await supplyRelatedParts();
+    //await dischargeRelatedParts();
+    //await supplyRelatedParts();
   }
 
-  async function questionNumber6(textFieldValue: string, questionNumber: number) {
+  async function questionNumber6(liquidIndex:number,textFieldValue: string, questionNumber: number) {
     // discharge,supply영향
     //discharge 비중
 
     try {
       const response = await dischargeSearchUpper("specific_gravity", textFieldValue);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -332,23 +425,25 @@ function QuestionContentLogic({
     //supply 비중
     try {
       const response = await supplySearchUpper("specific_gravity", textFieldValue);
-      await inputSupplyData(questionNumber, response);
-      await setPartsState(parts);
+      await inputSupplyData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
 
-    await dischargeRelatedParts();
-    await supplyRelatedParts();
+    //await dischargeRelatedParts();
+    //await supplyRelatedParts();
   }
 
-  async function questionNumber7(textFieldValue: string, questionNumber: number) {
+  async function questionNumber7(liquidIndex:number,textFieldValue: string, questionNumber: number) {
     //discharge ,supply영향
-
+   const parts = {...partsMap.get(liquidIndex) }
     //discharge 토출량
+  
     //제약식 1번)barrel,카트리지는 여기서 살아있었던 없었던 무조건 부활시켜서 discharge에 포함시키기(이건 mostclose파일에적용함)
     try {
       const response = await dischargeSearchMostClose("median_discharge_amount", textFieldValue, parts.discharge); //response엔 바렐+카트리지+살아남은놈다섯
+      console.log("response.data",response.data)
       const responseMMA = await getRowData("discharge", "part_name", "MMA");
       if (parts.discharge.includes(responseMMA.data[0].id)) {
         //만약 MMA가 살아있었으면
@@ -360,11 +455,13 @@ function QuestionContentLogic({
         }
 
         console.log("arrForMMA", arrForMMA);
-        parts = {
-          ...parts,
-          discharge: [...arrForMMA],
-        };
-        prevParts[questionNumber] = {
+        parts.discharge=[...arrForMMA];
+        partsMap.set(liquidIndex,parts);
+        // parts = {
+        //   ...parts,
+        //   discharge: [...arrForMMA],
+        // };
+        prevParts[liquidIndex][questionNumber] = {
           application: parts.application,
           control: parts.control,
           discharge: parts.discharge,
@@ -374,29 +471,31 @@ function QuestionContentLogic({
         };
       } else {
         //만약 MMA가 없었으면
-        await inputDischargeData(response, "replaceAll"); //하던대로
+        await inputDischargeData(liquidIndex,response, "replaceAll"); //하던대로
       }
     } catch (error) {
       console.error("Error:", error);
     }
 
-    console.log("바꾸기전", parts.discharge);
+    
 
     //supply토출량
     try {
       const response = await supplySearchUpper("max_discharge_amount", textFieldValue);
       console.log(response);
-      await inputSupplyData(questionNumber, response);
-      await setPartsState(parts);
+      await inputSupplyData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
 
-    await dischargeRelatedParts();
-    await supplyRelatedParts();
+    //await dischargeRelatedParts();
+    //await supplyRelatedParts();
   }
 
-  async function questionNumber8(textFieldValue: string, questionNumber: number) {
+  async function questionNumber8(liquidIndex:number,textFieldValue: string, questionNumber: number) {
+    const parts = {...partsMap.get(liquidIndex) }
+
     //discharge, application영향
     if (textFieldValue === "1") {
       //2번 outlier 제약
@@ -413,11 +512,13 @@ function QuestionContentLogic({
             arr = [];
 
             arr.push(responseBVM06.data[0].id);
-            parts = {
-              ...parts,
-              discharge: [...arr],
-            };
-            prevParts[questionNumber] = {
+            parts.discharge=[...arr];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...arr],
+            // };
+            prevParts[liquidIndex][questionNumber] = {
               application: parts.application,
               control: parts.control,
               discharge: parts.discharge,
@@ -425,15 +526,17 @@ function QuestionContentLogic({
               robot: parts.robot,
               supply: parts.supply,
             };
-            await setPartsState(parts);
+            await setPartsState(partsMap);
           }
           if (parts.discharge.includes(responseBV0250T.data[0].id)) {
             arr.push(responseBV0250T.data[0].id);
-            parts = {
-              ...parts,
-              discharge: [...arr],
-            };
-            prevParts[questionNumber] = {
+            parts.discharge=[...arr];
+            partsMap.set(liquidIndex,parts);
+            // parts = {
+            //   ...parts,
+            //   discharge: [...arr],
+            // };
+            prevParts[liquidIndex][questionNumber] = {
               application: parts.application,
               control: parts.control,
               discharge: parts.discharge,
@@ -441,14 +544,14 @@ function QuestionContentLogic({
               robot: parts.robot,
               supply: parts.supply,
             };
-            await setPartsState(parts);
+            await setPartsState(partsMap);
           } else if (!parts.discharge.includes(responseBVM06.data[0].id) && !parts.discharge.includes(responseBV0250T.data[0].id)) {
             //BV-M06,BV-0250T 안갖고있으면
 
             const response = await dischargeSearchUnder("discharge_accuracy", textFieldValue, parts.discharge); //하던대로 하기
 
-            await inputDischargeData(questionNumber, response);
-            await setPartsState(parts);
+            await inputDischargeData(liquidIndex,questionNumber, response);
+            await setPartsState(partsMap);
           }
 
           await searchApplication();
@@ -474,19 +577,25 @@ function QuestionContentLogic({
             console.log("8번질문 1제약식");
             const responseGearPump = await getRowData("application", "part_name", "Gear Pump");
             const supportPaste = await getRowData("discharge", "SUPPROT_PASTE", "YES");
-            await inputApplicationData(responseGearPump, undefined, "replaceAll");
-            await setPartsState(parts);
+            await inputApplicationData(liquidIndex,questionNumber,responseGearPump, undefined, "replaceAll");
+            await setPartsState(partsMap);
             await inputDischargeData(supportPaste, undefined, "replaceAll");
-            await setPartsState(parts); //이제 다 가져왔으니
+            await setPartsState(partsMap); //이제 다 가져왔으니
             //4번질문 거르기
-            await questionNumber4(userResponse[4].choiceItem, 4);
+            await questionNumber4(liquidIndex,userResponse[4].choiceItem, 4);
             //7번질문 거르기
-            await questionNumber7(userResponse[7].textFieldValue, 7);
+            await questionNumber7(liquidIndex,userResponse[7].shortAnswerValues[0], 7);
           } else if (response.data.length > 0) {
-            //8번 질문에서 1이라고 답변했을때 뭔가 살아나오면 하던대로하기
-            await inputDischargeData(questionNumber, response);
-            await setPartsState(parts);
-            await searchApplication();
+            //8번 질문에서 1이라고 답변했을때 뭔가 살아나왔으면
+            
+            await inputDischargeData(liquidIndex,questionNumber, response);
+            const applicationResponse = await applicationSearchUnder("discharge_accuracy", textFieldValue);
+            console.log("applicationResponse",applicationResponse)
+            //어플리케이션 살아놈은 놈들중 gear pump빼고 다 가져오기
+            const filteredData = applicationResponse.data.filter(item => item.part_name !== "Gear Pump");
+            await inputApplicationData(liquidIndex,questionNumber, filteredData);
+            await setPartsState(partsMap);
+            return;
           }
         } catch (error) {
           console.error("Error:", error);
@@ -496,8 +605,8 @@ function QuestionContentLogic({
       //정량성이 1보다 클땐 그냥 하던대로 하기
       try {
         const response = await dischargeSearchUnder("discharge_accuracy", textFieldValue, parts.discharge);
-        await inputDischargeData(questionNumber, response);
-        await setPartsState(parts);
+        await inputDischargeData(liquidIndex,questionNumber, response);
+        await setPartsState(partsMap);
         await searchApplication();
       } catch (error) {
         console.error("Error:", error);
@@ -506,20 +615,20 @@ function QuestionContentLogic({
 
     async function searchApplication() {
       const response = await applicationSearchUnder("discharge_accuracy", textFieldValue);
-      await inputApplicationData(questionNumber, response);
-      await setPartsState(parts);
+      await inputApplicationData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     }
 
-    await dischargeRelatedParts();
+    //await dischargeRelatedParts();
   }
-  async function questionNumber9(choiceItem: string, questionNumber: number) {
+  async function questionNumber9(liquidIndex:number,choiceItem: string, questionNumber: number) {
     //discharge , application 영향
     //application 부분 filler
     try {
       const response = await getRowData("application", "FILLER_SUPPORT", choiceItem);
       console.log("9번질문 어플", response);
-      await inputApplicationData(questionNumber, response);
-      await setPartsState(parts);
+      await inputApplicationData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -527,38 +636,38 @@ function QuestionContentLogic({
     try {
       const response = await getRowData("discharge", "FILLER_SUPPORT", choiceItem);
       console.log("9번질문 토출", response);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
-    await dischargeRelatedParts();
+    //await dischargeRelatedParts();
   }
 
-  async function questionNumber10(choiceItem: string, questionNumber: number) {
+  async function questionNumber10(liquidIndex:number,choiceItem: string, questionNumber: number) {
     //discharge  영향
     //discharge부분 경화조건
 
     try {
       const response = await getRowData("discharge", "CURING_CONDITIONS", choiceItem);
       console.log("10번질문 토출", response);
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
-    await dischargeRelatedParts();
+    //await dischargeRelatedParts();
   }
 
-  async function questionNumber11(choiceItem: string, textFieldValue: string, questionNumber: number) {
+  async function questionNumber11(liquidIndex:number,choiceItem: string, textFieldValue: string, questionNumber: number) {
     // discharge , supply , application 영향
-
+    const parts = {...partsMap.get(liquidIndex) }
     //discharge 제공형태
     try {
       const response = await getRowData("discharge", "SUPPLY_FORM", choiceItem);
 
-      await inputDischargeData(questionNumber, response);
-      await setPartsState(parts);
+      await inputDischargeData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -566,8 +675,8 @@ function QuestionContentLogic({
     //supply 제공형태
     try {
       const response = await getRowData("supply", "SUPPLY_FORM", choiceItem);
-      await inputSupplyData(questionNumber, response);
-      await setPartsState(parts);
+      await inputSupplyData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -576,8 +685,8 @@ function QuestionContentLogic({
     try {
       const response = await supplySearchUpper("supply_capacity_L", textFieldValue, parts.supply);
       console.log("11번질문", response);
-      await inputSupplyData(questionNumber, response);
-      await setPartsState(parts);
+      await inputSupplyData(liquidIndex,questionNumber, response);
+      await setPartsState(partsMap);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -592,11 +701,12 @@ function QuestionContentLogic({
       console.error("Error:", error);
     }
 
-    await dischargeRelatedParts();
-    await supplyRelatedParts();
+   //await dischargeRelatedParts();
+    //await supplyRelatedParts();
   }
 
-  async function questionNumber12(choiceItem: string, questionNumber: number) {
+  async function questionNumber12(liquidIndex:number,choiceItem: string, questionNumber: number) {
+    const parts = {...partsMap.get(liquidIndex) }
     // 12번질문에서 manual선택하면 토출에서 barrel,카트리지뺴고 전부 제끼기
     // 토출에서 barrel또는cartridge가 선택됐으면 무조건 공급에서도 barrel또는 cartridge가 선택됐어야함.
     //  그럼 토출쪽 barrel이나 cartridge는 지우기
@@ -626,12 +736,14 @@ function QuestionContentLogic({
         alert("시스템에서 지원하지 않는 사양입니다. 영업사원에게 문의해주세요");
       } else if (dischargeParts.length > 0) {
         //살아남은 discharge중에 BARREL이나Cartridge가 있으면
-        parts = {
-          ...parts,
-          discharge: [...dischargeParts],
-        }; //BARREL이나Cartridge뺴고 다 제끼기
+        parts.discharge= [...dischargeParts];
+        partsMap.set(liquidIndex,parts);
+        // parts = {
+        //   ...parts,
+        //   discharge: [...dischargeParts],
+        // }; //BARREL이나Cartridge뺴고 다 제끼기
 
-        prevParts[questionNumber] = {
+        prevParts[liquidIndex][questionNumber] = {
           application: parts.application,
           control: parts.control,
           discharge: parts.discharge,
@@ -639,14 +751,10 @@ function QuestionContentLogic({
           robot: parts.robot,
           supply: parts.supply,
         };
-        await setPartsState(parts);
+        await setPartsState(partsMap);
 
         let supplyParts = [];
-        //테스트코드
-        // parts = {
-        //   ...parts,
-        //   supply: [1,9,17]
-        // };
+
         for (let i = 0; i < parts.supply.length; i++) {
           //살아남은 supply 중에 BARREL이나Cartridge있는지 보기
           try {
@@ -666,12 +774,13 @@ function QuestionContentLogic({
         } else if (supplyParts.length > 0) {
           //살아남은 supply 중에 BARREL이나Cartridge가 있으면
           console.log("supply 여기 살아남았음", supplyParts);
-          parts = {
-            ...parts,
-            supply: [...supplyParts],
-          }; //BARREL이나Cartridge뺴고 다 제끼기
-
-          prevParts[questionNumber] = {
+          parts.supply=[...supplyParts];
+          partsMap.set(liquidIndex,parts);
+          // parts = {
+          //   ...parts,
+          //   supply: [...supplyParts],
+          // }; //BARREL이나Cartridge뺴고 다 제끼기
+          prevParts[liquidIndex][questionNumber] = {
             application: parts.application,
             control: parts.control,
             discharge: parts.discharge,
@@ -679,14 +788,14 @@ function QuestionContentLogic({
             robot: parts.robot,
             supply: parts.supply,
           };
-          await setPartsState(parts);
+          await setPartsState(partsMap);
         }
       }
     }
-    await dischargeRelatedParts();
-    await supplyRelatedParts();
+    //await dischargeRelatedParts();
+    //await supplyRelatedParts();
   }
-  async function questionNumber13(textFieldValue: string[], questionNumber: number) {
+  async function questionNumber13(liquidIndex:number,textFieldValue: string[], questionNumber: number) {
     //로봇영향
     let sizeArr = [...textFieldValue];
 
@@ -702,8 +811,8 @@ function QuestionContentLogic({
         //z값이 100을 초과한다면
         try {
           const response = await getRowData("robot", "part_name", "Any Cartesian"); //Any Cartesian이 자동선택됨
-          await inputRobotData(questionNumber, response);
-          await setPartsState(parts);
+          await inputRobotData(liquidIndex,questionNumber, response);
+          await setPartsState(partsMap);
         } catch (error) {
           console.error("Error:", error);
         }
@@ -711,8 +820,8 @@ function QuestionContentLogic({
         //z값이 100을 초과하지않는다면
         try {
           const response = await robotSearchUpper("product_size_X", sizeArr[0]); //자동으로 2개선택됨 (고가저가로 나중에 1개만뽑힘)
-          await inputRobotData(questionNumber, response);
-          await setPartsState(parts);
+          await inputRobotData(liquidIndex,questionNumber, response);
+          await setPartsState(partsMap);
         } catch (error) {
           console.error("Error:", error);
         }
@@ -720,10 +829,11 @@ function QuestionContentLogic({
     } catch (error) {
       console.error("Error:", error);
     }
-    await robotRelatedParts();
+    //await robotRelatedParts();
   }
 
-  async function questionNumber14(choiceItem: string, questionNumber: number) {
+  async function questionNumber14(liquidIndex:number,choiceItem: string, questionNumber: number) {
+    
     async function highLowPrice() {
       //이건 원래대로 해야했던거
       try {
@@ -732,16 +842,39 @@ function QuestionContentLogic({
         const responserobot = await getRowData("robot", "HIGH_LOW_PRICE", choiceItem);
 
         console.log("responserobot", responserobot);
-        await inputSupplyData(questionNumber, responsesupply);
-        await setPartsState(parts);
-        await inputApplicationData(questionNumber, responseAppli);
-        await setPartsState(parts);
-        await inputRobotData(questionNumber, responserobot);
-        await setPartsState(parts);
+        await inputSupplyData(liquidIndex,questionNumber, responsesupply);
+        await setPartsState(partsMap);
+        await inputApplicationData(liquidIndex,questionNumber, responseAppli);
+        await setPartsState(partsMap);
+        await inputRobotData(liquidIndex,questionNumber, responserobot);
+        await setPartsState(partsMap);
       } catch (error) {
         console.error("Error:", error);
       }
     }
+    
+    const parts = {...partsMap.get(liquidIndex) }
+    //제약식 -1)2번 질문에 2액형이라고 대답했고 2액형 카트리지도 사용하는 경우
+    if(userResponse[2].choiceItem === "TWO_COMPONENT" && userResponse[3].choiceItem === "YES"){
+      //MMA 고정 
+      const response = await getRowData("discharge", "part_name", "MMA");
+      parts.discharge=[response.data[0].id];
+      partsMap.set(liquidIndex,parts);
+    }
+    //제약식 0)가격으로 판단하기 전에 살아남은 discharge중 BARREL 이나 Cartridge 가 있으면 parts.supply를 비운다
+    if(parts.discharge.length>0){
+      for(let index=0;index <parts.discharge.length;index++)
+        {
+          const response = await getRowData("discharge", "id", parts.discharge[index]);
+          if(response.data[0].category === "BARREL" ||
+          response.data[0].category === "Cartridge" 
+          ){
+            parts.supply=[];
+          }
+        }
+      partsMap.set(liquidIndex,parts);
+    }
+
     //공급, 어플리케이션,로봇 영향
     //제약식 1)가격으로 판단하기 전에 4번답이 line이나 dot이고 2번 답이 1액형 이었으면
     // 토출의BV-303,BV-325,BV-396 살아남았으면 얘네만 남기기
@@ -759,28 +892,34 @@ function QuestionContentLogic({
           console.log("14번질문 1제약식");
           arrOneComponents = [];
           arrOneComponents.push(responseBV303.data[0].id);
-          parts = {
-            ...parts,
-            discharge: [...arrOneComponents],
-          };
+          parts.discharge= [...arrOneComponents];
+          partsMap.set(liquidIndex,parts);
+          // parts = {
+          //   ...parts,
+          //   discharge: [...arrOneComponents],
+          // };
         }
         if (parts.discharge.includes(responseBV325.data[0].id)) {
           //325이 포함돼있다면
           console.log("14번질문 1제약식");
           arrOneComponents.push(responseBV325.data[0].id);
-          parts = {
-            ...parts,
-            discharge: [...arrOneComponents],
-          };
+          parts.discharge= [...arrOneComponents];
+          partsMap.set(liquidIndex,parts);
+          // parts = {
+          //   ...parts,
+          //   discharge: [...arrOneComponents],
+          // };
         }
         if (parts.discharge.includes(responseBV396.data[0].id)) {
           //396이 포함돼있다면
           console.log("14번질문 1제약식");
           arrOneComponents.push(responseBV396.data[0].id);
-          parts = {
-            ...parts,
-            discharge: [...arrOneComponents],
-          };
+          parts.discharge= [...arrOneComponents];
+          partsMap.set(liquidIndex,parts);
+          // parts = {
+          //   ...parts,
+          //   discharge: [...arrOneComponents],
+          // };
         } else if (
           !parts.discharge.includes(responseBV303.data[0].id) &&
           !parts.discharge.includes(responseBV325.data[0].id) &&
@@ -790,7 +929,7 @@ function QuestionContentLogic({
           await highLowPrice(); //원래대로 하던거
         }
         await highLowPrice(); //원래대로 하던거
-        await setPartsState(parts);
+        await setPartsState(partsMap);
       } //제약식2)가격으로 판단하기 전에 4번답이 line이나 dot이고 2번 답이 2액형 이었으면
       // 토출의BV-T900,BV-T900-MINI살아남았으면 얘네만 남기기
       else if (userResponse[2].choiceItem === "TWO_COMPONENT") {
@@ -803,33 +942,37 @@ function QuestionContentLogic({
           console.log("14번질문 2제약식");
           arrTwoComponents = [];
           arrTwoComponents.push(responseBVT900.data[0].id);
-          parts = {
-            ...parts,
-            discharge: [...responseBVT900],
-          };
+          parts.discharge= [...arrTwoComponents];
+          partsMap.set(liquidIndex,parts);
+          // parts = {
+          //   ...parts,
+          //   discharge: [...responseBVT900],
+          // };
         }
         if (parts.discharge.includes(responseBVT900MINI.data[0].id)) {
           //t900mini이 포함돼있다면
           console.log("14번질문 2제약식");
           arrTwoComponents.push(responseBVT900MINI.data[0].id);
-          parts = {
-            ...parts,
-            discharge: [...responseBVT900MINI],
-          };
+          parts.discharge= [...arrTwoComponents];
+          partsMap.set(liquidIndex,parts);
+          // parts = {
+          //   ...parts,
+          //   discharge: [...responseBVT900MINI],
+          // };
         } else if (!parts.discharge.includes(responseBVT900.data[0].id) && !parts.discharge.includes(responseBVT900MINI.data[0].id)) {
           //위에 2개다 없으면 고대로 진행
           await highLowPrice(); //원래대로 하던거
         }
 
         await highLowPrice(); //원래대로 하던거
-        await setPartsState(parts);
+        await setPartsState(partsMap);
       }
     } else {
       //4번답이 line이나 dot이 아니었으면
       await highLowPrice(); //고대로 하던거하기
-      await setPartsState(parts);
+      await setPartsState(partsMap);
     }
-    prevParts[questionNumber] = {
+    prevParts[liquidIndex][questionNumber] = {
       application: parts.application,
       control: parts.control,
       discharge: parts.discharge,
@@ -837,63 +980,59 @@ function QuestionContentLogic({
       robot: parts.robot,
       supply: parts.supply,
     };
+  
     await priceSelection(choiceItem);//토출,공급은 가격으로 최종 하나만선정
-    await supplyRelatedParts();
-    await robotRelatedParts();
-    await sortAllPart("discharge","supply",relatedPartsWithDischarge.supply);
-    await sortAllPart("discharge","control",relatedPartsWithDischarge.control);
-    await sortAllPart("discharge","etc",relatedPartsWithDischarge.etc);
-    await sortAllPart("supply","discharge", relatedPartWithSupply.discharge);
-    await sortAllPart("supply", "etapplicationc",relatedPartWithSupply.application);
-    await sortAllPart("supply", "etc",relatedPartWithSupply.etc);
-    await sortAllPart("robot", "etc",relatedPartWithRobot.etc);
-    await getRelatedPartItem();
-    await questionNumber15();
-  }
-  function sortAllPart(tableName:string,targetName:string, dataArray:any){
-    for (const key of Object.keys(dataArray)){
-      const itemArray = dataArray[key][tableName];
-      if(itemArray !== undefined && itemArray.length > 0){
-        for (let i = 0; i < itemArray.length; i++) {
-          const id = itemArray[i];
-          if(targetName === "supply"){
-            if(!parts.supply.includes(id))
-              {
-                parts.supply.push(id)
-              }
-          }
-          else if(targetName === "control"){
-            if(!parts.control.includes(id))
-              {
-                parts.control.push(id)
-              }
-          }
-          else if(targetName === "etc"){
-            if(!parts.etc.includes(id))
-              {
-                parts.etc.push(id)
-              }
-          }
-          else if(targetName === "application"){
-            if(!parts.application.includes(id))
-              {
-                parts.application.push(id)
-              }
-          }
-          else if(targetName === "discharge"){
-            if(!parts.discharge.includes(id))
-              {
-                parts.discharge.push(id)
-              }
-          }
-        }
-      }
-      
-    }
 
-    console.log("모든 정렬이끝난 parts",parts)
+
+   
   }
+  
+  // function sortAllPart(tableName:string,targetName:string, dataArray:any){
+  //   for (const key of Object.keys(dataArray)){
+  //     const itemArray = dataArray[key][tableName];
+  //     if(itemArray !== undefined && itemArray.length > 0){
+  //       for (let i = 0; i < itemArray.length; i++) {
+  //         const id = itemArray[i];
+  //         if(targetName === "supply"){
+  //           if(!parts.supply.includes(id))
+  //             {
+  //               parts.supply.push(id)
+  //             }
+  //         }
+  //         else if(targetName === "control"){
+  //           if(!parts.control.includes(id))
+  //             {
+  //               parts.control.push(id)
+  //             }
+  //         }
+  //         else if(targetName === "etc"){
+  //           if(!parts.etc.includes(id))
+  //             {
+  //               parts.etc.push(id)
+  //             }
+  //         }
+  //         else if(targetName === "application"){
+  //           if(!parts.application.includes(id))
+  //             {
+  //               parts.application.push(id)
+  //             }
+  //         }
+  //         else if(targetName === "discharge"){
+  //           if(!parts.discharge.includes(id))
+  //             {
+  //               parts.discharge.push(id)
+  //             }
+  //         }
+  //       }
+  //     }
+      
+  //   }
+
+  //   console.log("모든 정렬이끝난 parts",parts)
+  // }
   async function priceSelection(choiceItem: string) {
+   
+    const parts = {...partsMap.get(liquidIndex) }
     if (parts.discharge.length > 1) {//최종 선정된 토출부품이 2개이상이면
       let priceArr: any[] = [];
       let lastPartStanding: any[] = [];
@@ -909,15 +1048,18 @@ function QuestionContentLogic({
         priceArr.sort((a, b) => a.price - b.price);//최저가 하나만선정
       }
       lastPartStanding.push(priceArr[0].id); 
-      parts = {
-        ...parts,
-        discharge: [...lastPartStanding], // 선택된 부품으로 업데이트
-      };
+     
+      parts.discharge=[...lastPartStanding];
+    
+      partsMap.set(liquidIndex,parts);
+
       priceArr = []; // 배열 초기화
       lastPartStanding = []; // 배열 초기화
     }
 
+    console.log(parts.supply)
     if (parts.supply.length > 1) {
+      console.log("^&^^^^^^^^^^")
       let priceArr: any[] = [];
       let lastPartStanding: any[] = [];
       for (let i = 0; i < parts.supply.length; i++) {
@@ -932,15 +1074,19 @@ function QuestionContentLogic({
         priceArr.sort((a, b) => a.price - b.price);
       }
       lastPartStanding.push(priceArr[0].id); 
-      parts = {
-        ...parts,
-        supply: [...lastPartStanding], // 선택된 부품으로 업데이트
-      };
+     
+      parts.supply=[...lastPartStanding];
+
+      partsMap.set(liquidIndex,parts);
+      // parts = {
+      //   ...parts,
+      //   supply: [...lastPartStanding], // 선택된 부품으로 업데이트
+      // };
       priceArr = []; // 배열 초기화
       lastPartStanding = []; // 배열 초기화
     }
 
-    await setPartsState(parts);
+    await setPartsState(partsMap);
   }
 
   
@@ -956,9 +1102,41 @@ function QuestionContentLogic({
     await fetchDataAndUpdateStateWithRobot("etc", relatedPartWithRobot.etc);
   }
   
-  
-  async function questionNumber15() {
+  async function sortNotUseDualCarttridgeCase(){
+    let dischargeArr=[];
+    outerLoop: for (let i = 0; i < 2; i++) {
+      const parts = { ...partsMap.get(i) };
+      for (let index = 0; index < parts.discharge.length; index++) {
+          const dischargeResponse = await getRowData("discharge", "id", parts.discharge[index]);
+          console.log("과연", dischargeResponse.data[0].ONE_COMPONENT_OR_TWO)
+          if (dischargeResponse.data[0].ONE_COMPONENT_OR_TWO === "TWO_COMPONENT" ||
+              dischargeResponse.data[0].ONE_COMPONENT_OR_TWO === "EVERYTHING"
+          ) {
+              let target = parts.discharge[index];
+              clearDischarge();
+              dischargeArr.push(target);
+              parts.discharge=[...dischargeArr];
+              partsMap.set(0,parts);
+              
+              break outerLoop;
+          }
+      }
+    }
+    
+   
+    function clearDischarge (){
+      for(let i =0;i<2;i++){ //parts.discharge를 전부 빈배열로만들기
+      const parts = { ...partsMap.get(i) };
+      parts.discharge=[];
+      partsMap.set(i,parts);
+    }
+   }
 
+
+
+  }
+  async function finalPartUpdate(liquidIndex:number) {
+    const parts = {...partsMap.get(liquidIndex) }
     //parts 부분
     console.log("최종", parts);
     if (parts.discharge.length > 0) {
@@ -1010,97 +1188,110 @@ function QuestionContentLogic({
     }
 
     //////////////엮이는부품 정보저장
-    console.log("최종 엮이는부품");
-    console.log("relatedPartsWithDischarge",relatedPartsWithDischarge);
-    console.log("relatedPartsWithDischarge.control.length",relatedPartsWithDischarge.control);
+    // console.log("최종 엮이는부품");
+    // console.log("relatedPartsWithDischarge",relatedPartsWithDischarge);
+    // console.log("relatedPartsWithDischarge.control.length",relatedPartsWithDischarge.control);
     
 ///////////////////
-    console.log("relatedPartsWithDischarge.etc.length",relatedPartsWithDischarge.etc.length);
-    if(relatedPartsWithDischarge.etc.length>0){
-      for (let i = 0; i < relatedPartsWithDischarge.etc.length; i++) {
-        const response = await getRowData("etc", "id", relatedPartsWithDischarge.etc[i]);
+    // console.log("relatedPartsWithDischarge.etc.length",relatedPartsWithDischarge.etc.length);
+    // if(relatedPartsWithDischarge.etc.length>0){
+    //   for (let i = 0; i < relatedPartsWithDischarge.etc.length; i++) {
+    //     const response = await getRowData("etc", "id", relatedPartsWithDischarge.etc[i]);
        
-        setRelatedPartsItemWithDischargeState((prevState: { etc: any }) => ({
-          ...prevState,
-          etc: [...prevState.etc, response.data[0]],
-        }));
-      }
-    }
-    console.log("relatedPartsWithDischarge.supply.length",relatedPartsWithDischarge.supply.length);
-    if(relatedPartsWithDischarge.supply.length>0){
-      for (let i = 0; i < relatedPartsWithDischarge.supply.length; i++) {
-        const response = await getRowData("supply", "id", relatedPartsWithDischarge.supply[i]);
-        setRelatedPartsItemWithDischargeState((prevState: { supply: any }) => ({
-          ...prevState,
-          supply: [...prevState.supply, response.data[0]],
-        }));
-      }
-    }
+    //     setRelatedPartsItemWithDischargeState((prevState: { etc: any }) => ({
+    //       ...prevState,
+    //       etc: [...prevState.etc, response.data[0]],
+    //     }));
+    //   }
+    // }
+    // console.log("relatedPartsWithDischarge.supply.length",relatedPartsWithDischarge.supply.length);
+    // if(relatedPartsWithDischarge.supply.length>0){
+    //   for (let i = 0; i < relatedPartsWithDischarge.supply.length; i++) {
+    //     const response = await getRowData("supply", "id", relatedPartsWithDischarge.supply[i]);
+    //     setRelatedPartsItemWithDischargeState((prevState: { supply: any }) => ({
+    //       ...prevState,
+    //       supply: [...prevState.supply, response.data[0]],
+    //     }));
+    //   }
+    // }
   }
 
   //////////////////util
-  async function dischargeRelatedParts() {
-    try {
-      const responseControl = await dischargeRelatedControl(parts.discharge);
-      const responseSupply = await dischargeRelatedSupply(parts.discharge);
-      const responseEtc = await dischargeRelatedEtc(parts.discharge);
-      console.log("responseControl", responseControl);
-      console.log("responseSupply", responseSupply);
-      console.log("responseEtc", responseEtc);
+  // async function dischargeRelatedParts() {
+  //   try {
+  //     const responseControl = await dischargeRelatedControl(parts.discharge);
+  //     const responseSupply = await dischargeRelatedSupply(parts.discharge);
+  //     const responseEtc = await dischargeRelatedEtc(parts.discharge);
+  //     console.log("responseControl", responseControl);
+  //     console.log("responseSupply", responseSupply);
+  //     console.log("responseEtc", responseEtc);
 
-      const mergedData = {
-        control: responseControl.data,
-        supply: responseSupply.data,
-        etc: responseEtc.data,
-      };
-      console.log("merged", mergedData);
+  //     const mergedData = {
+  //       control: responseControl.data,
+  //       supply: responseSupply.data,
+  //       etc: responseEtc.data,
+  //     };
+  //     console.log("merged", mergedData);
 
-      setRelatedPartsWithDischargeState(mergedData);
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  }
+  //     setRelatedPartsWithDischargeState(mergedData);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // }
 
-  async function supplyRelatedParts() {
-    try {
-      const responseApplication = await supplyRelatedApplication(parts.supply);
-      const responseDischarge = await supplyRelatedDischarge(parts.supply);
-      const responseEtc = await supplyRelatedEtc(parts.supply);
-      console.log("responseApplication", responseApplication);
-      console.log("responseDischarge", responseDischarge);
-      console.log("responseEtc", responseEtc);
-      const mergedData = {
-        application: responseApplication.data,
-        discharge: responseDischarge.data,
-        etc: responseEtc.data,
-      };
-      console.log("merged", mergedData);
-      setRelatedPartWithSupply(mergedData);
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  }
+  // async function supplyRelatedParts() {
+  //   try {
+  //     const responseApplication = await supplyRelatedApplication(parts.supply);
+  //     const responseDischarge = await supplyRelatedDischarge(parts.supply);
+  //     const responseEtc = await supplyRelatedEtc(parts.supply);
+  //     console.log("responseApplication", responseApplication);
+  //     console.log("responseDischarge", responseDischarge);
+  //     console.log("responseEtc", responseEtc);
+  //     const mergedData = {
+  //       application: responseApplication.data,
+  //       discharge: responseDischarge.data,
+  //       etc: responseEtc.data,
+  //     };
+  //     console.log("merged", mergedData);
+  //     setRelatedPartWithSupply(mergedData);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // }
 
-  async function robotRelatedParts() {
-    try {
-      const responseEtc = await robotRelatedEtc(parts.robot);
-      console.log("responseEtc", responseEtc);
-      // const mergedData = {
-      //   ...etc , etc: responseEtc.data
-      // };
-      const mergedData = {
-        etc: responseEtc.data,
-      };
-      console.log("merged", mergedData);
-      setRelatedPartWithRobot(mergedData);
-    } catch (error) {
-      console.error("Error:", error);
+  // async function robotRelatedParts() {
+  //   try {
+  //     const responseEtc = await robotRelatedEtc(parts.robot);
+  //     console.log("responseEtc", responseEtc);
+  //     // const mergedData = {
+  //     //   ...etc , etc: responseEtc.data
+  //     // };
+  //     const mergedData = {
+  //       etc: responseEtc.data,
+  //     };
+  //     console.log("merged", mergedData);
+  //     setRelatedPartWithRobot(mergedData);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // }
+  async function showAllParts(){
+    console.log("asdasdasd")
+    console.log(Number(userResponse[1].shortAnswerValues[0]))
+    for(let i =0; i<Number(userResponse[1].shortAnswerValues[0]); i++){
+      console.log(i,"번째")
+      const parts = {...partsMap.get(i) }
+      console.log("///////////")
+      console.log(parts)
     }
   }
 
   ////////////////////////////
-  function inputDischargeData(questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
-    let responseDischarge: Number[] = [];
+  function inputDischargeData(liquidIndex:number,questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
+    const parts = {...partsMap.get(liquidIndex) }
+    console.log("parts",parts);
+    
+    let responseDischarge: number[] = [];
     responseDischarge = [];
     //전부 교체해야하면(토출량정량성 질문의 예외사항2번같은경우)
     if (replaceAll === "replaceAll") {
@@ -1116,13 +1307,16 @@ function QuestionContentLogic({
         }
       }
       console.log(responseDischarge);
-      parts = {
-        ...parts,
-        discharge: [...responseDischarge],
-      };
+      // parts= {
+      //   ...parts,
+      //   discharge: [...responseDischarge],
+      // };
+      parts.discharge=[...responseDischarge];
     } else {
       //discharge비어있거나 전부 넣어야하면 일단 전부 때려넣기
       if (parts.discharge.length === 0 || inputAll === "inputAll") {
+        console.log("response.data")
+        console.log(response.data)
         response.data.forEach((item: DischargeDTO) => {
           responseDischarge.push(Number(item.id));
         });
@@ -1143,15 +1337,16 @@ function QuestionContentLogic({
           });
         }
       }
-      parts = {
-        ...parts,
-        discharge: [...responseDischarge],
-      };
+      // parts = {
+      //   ...parts,
+      //   discharge: [...responseDischarge],
+      // };
+      parts.discharge=[...responseDischarge];
       replaceAll = "";
       inputAll = "";
     }
 
-    prevParts[questionNumber] = {
+    prevParts[liquidIndex][questionNumber] = {
       application: parts.application,
       control: parts.control,
       discharge: parts.discharge,
@@ -1159,11 +1354,17 @@ function QuestionContentLogic({
       robot: parts.robot,
       supply: parts.supply,
     };
+    console.log("prevParts[liquidIndex][questionNumber]")
+    console.log(prevParts[liquidIndex][questionNumber])
+    partsMap.set(liquidIndex,parts);
+    console.log("partsMap.get(liquidIndex)");
+    console.log(partsMap.get(liquidIndex));
     return;
   }
 
-  function inputApplicationData(questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
-    let responseApplication: Number[] = [];
+  function inputApplicationData(liquidIndex:number, questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
+    const parts = {...partsMap.get(liquidIndex) }
+    let responseApplication: number[] = [];
     responseApplication = [];
     //전부 교체해야하면(토출량정량성 질문의 예외사항2번같은경우)
     if (replaceAll === "replaceAll") {
@@ -1179,10 +1380,11 @@ function QuestionContentLogic({
         }
       }
       console.log(responseApplication);
-      parts = {
-        ...parts,
-        application: [...responseApplication],
-      };
+      // parts = {
+      //   ...parts,
+      //   application: [...responseApplication],
+      // };
+      parts.application=[...responseApplication];
     } else {
       //application 비어있거나 전부 넣어야하면 일단 전부 때려넣기
       if (parts.application.length === 0 || inputAll === "inputAll") {
@@ -1206,14 +1408,21 @@ function QuestionContentLogic({
           });
         }
       }
-      parts = {
-        ...parts,
-        application: [...responseApplication],
-      };
+      // parts = {
+      //   ...parts,
+      //   application: [...responseApplication],
+      // };
+      console.log(responseApplication);
+      console.log(responseApplication);
+      console.log("parts.application")
+      console.log(parts.application)
+      parts.application=[...responseApplication];
+      
+
     }
     replaceAll = "";
     inputAll = "";
-    prevParts[questionNumber] = {
+    prevParts[liquidIndex][questionNumber] = {
       application: parts.application,
       control: parts.control,
       discharge: parts.discharge,
@@ -1221,11 +1430,13 @@ function QuestionContentLogic({
       robot: parts.robot,
       supply: parts.supply,
     };
+    partsMap.set(liquidIndex,parts);
     return;
   }
 
-  function inputSupplyData(questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
-    let responseSupply: Number[] = [];
+  function inputSupplyData(liquidIndex:number, questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
+    const parts = {...partsMap.get(liquidIndex) }
+    let responseSupply: number[] = [];
     responseSupply = [];
     //전부 교체해야하면(토출량정량성 질문의 예외사항2번같은경우)
     if (replaceAll === "replaceAll") {
@@ -1241,18 +1452,16 @@ function QuestionContentLogic({
         }
       }
       console.log(responseSupply);
-      parts = {
-        ...parts,
-        supply: [...responseSupply],
-      };
+
+      parts.supply=[...responseSupply];
     } else {
-      //supply 비어있거나 전부 넣어야하면 일단 전부 때려넣기
+      
       if (parts.supply.length === 0 || inputAll === "inputAll") {
         response.data.forEach((item: SupplyDTO) => {
           responseSupply.push(Number(item.id));
         });
       }
-      //supply 에 이미 뭐 있으면 겹치는것만저장
+      
       else {
         //response.data의 길이가 1이면 여기서 추가함(근데 코드에선 undefined로나옴)
         if (response.data.length === undefined) {
@@ -1268,14 +1477,18 @@ function QuestionContentLogic({
           });
         }
       }
-      parts = {
-        ...parts,
-        supply: [...responseSupply],
-      };
+
+      console.log(responseSupply);
+      console.log(responseSupply);
+      console.log("parts.supply")
+      console.log(parts.supply)
+      parts.supply=[...responseSupply];
+      
+
     }
     replaceAll = "";
     inputAll = "";
-    prevParts[questionNumber] = {
+    prevParts[liquidIndex][questionNumber] = {
       application: parts.application,
       control: parts.control,
       discharge: parts.discharge,
@@ -1283,11 +1496,13 @@ function QuestionContentLogic({
       robot: parts.robot,
       supply: parts.supply,
     };
+    partsMap.set(liquidIndex,parts);
     return;
   }
 
-  function inputRobotData(questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
-    let responseRobot: Number[] = [];
+  function inputRobotData(liquidIndex:number, questionNumber: number, response: any, inputAll?: string, replaceAll?: string) {
+    const parts = {...partsMap.get(liquidIndex) }
+    let responseRobot: number[] = [];
     responseRobot = [];
     //전부 교체해야하면(토출량정량성 질문의 예외사항2번같은경우)
     if (replaceAll === "replaceAll") {
@@ -1303,18 +1518,16 @@ function QuestionContentLogic({
         }
       }
       console.log(responseRobot);
-      parts = {
-        ...parts,
-        robot: [...responseRobot],
-      };
+
+      parts.robot=[...responseRobot];
     } else {
-      //robot 비어있거나 전부 넣어야하면 일단 전부 때려넣기
+      
       if (parts.robot.length === 0 || inputAll === "inputAll") {
         response.data.forEach((item: RobotDTO) => {
           responseRobot.push(Number(item.id));
         });
       }
-      //robot 에 이미 뭐 있으면 겹치는것만저장
+      
       else {
         //response.data의 길이가 1이면 여기서 추가함(근데 코드에선 undefined로나옴)
         if (response.data.length === undefined) {
@@ -1330,15 +1543,18 @@ function QuestionContentLogic({
           });
         }
       }
-      parts = {
-        ...parts,
-        robot: [...responseRobot],
-      };
+
+      console.log(responseRobot);
+      console.log(responseRobot);
+      console.log("parts.robot")
+      console.log(parts.robot)
+      parts.robot=[...responseRobot];
+      
+
     }
-    console.log("parts.robot", parts.robot);
     replaceAll = "";
     inputAll = "";
-    prevParts[questionNumber] = {
+    prevParts[liquidIndex][questionNumber] = {
       application: parts.application,
       control: parts.control,
       discharge: parts.discharge,
@@ -1346,8 +1562,11 @@ function QuestionContentLogic({
       robot: parts.robot,
       supply: parts.supply,
     };
+    partsMap.set(liquidIndex,parts);
     return;
   }
+
+  
   /////////////////////////////////
   async function fetchDataAndUpdateState(tableName:string, dataArray:any, setStateFunction:any) {
     if (!dataArray) {

@@ -1,4 +1,5 @@
 import { atom } from 'recoil';
+import { PartItem } from './QuestionContentLogic';
 
 export const relatedPartsWithdischargeState = atom<Record<number, { control: number[] ,supply:number[],etc:number[] }>>({
   key: 'relatedPartsWithdischargeState',
@@ -15,21 +16,8 @@ export const relatedPartsWithrobotState = atom<Record<number, { etc:number[] }>>
 });
 
 
-export const partsState = atom<{
-  application: number[];
-  control: number[];
-  discharge: number[];
-  etc: number[];
-  robot: number[];
-  supply: number[];
-}>({
+export const partsState = atom<Map <number,PartItem>>({
   key: 'partsState',
-  default: {
-    application: [],
-    control: [],
-    discharge: [],
-    etc: [],
-    robot: [],
-    supply: [],
-  },
+  default:new Map<number, PartItem>()
 });
+
