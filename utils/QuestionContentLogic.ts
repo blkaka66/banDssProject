@@ -354,7 +354,7 @@ async function QuestionContentLogic({
   async function questionNumber5(liquidIndex:number,choiceItem: string, textFieldValue: string, questionNumber: number) {
     //applicaiton, discharge , supply영향
 
-    if(userResponse[4].choiceItem="CONFORMAL_COATING_SPRAYING_SPRAY_VALVE"){//4번질문에서 CONFORMAL_COATING_SPRAYING_SPRAY_VALVE 선택했는데 
+    if(userResponse[4].choiceItem==="CONFORMAL_COATING_SPRAYING_SPRAY_VALVE"){//4번질문에서 CONFORMAL_COATING_SPRAYING_SPRAY_VALVE 선택했는데 
       if(Number(textFieldValue)>1000){//5번 질문에서 1000초과이면 에러
         alert("에러!")
       }
