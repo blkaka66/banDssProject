@@ -855,12 +855,15 @@ async function QuestionContentLogic({
     
     const parts = {...partsMap.get(liquidIndex) }
     //제약식 -1)2번 질문에 2액형이라고 대답했고 2액형 카트리지도 사용하는 경우
-    if(userResponse[2].choiceItem === "TWO_COMPONENT" && userResponse[3].choiceItem === "YES"){
-      //MMA 고정 
-      const response = await getRowData("discharge", "part_name", "MMA");
-      parts.discharge=[response.data[0].id];
-      partsMap.set(liquidIndex,parts);
-    }
+    if(userResponse[2] && userResponse[3])
+      {
+        if(userResponse[2].choiceItem === "TWO_COMPONENT" && userResponse[3].choiceItem === "YES"){
+          //MMA 고정 
+          const response = await getRowData("discharge", "part_name", "MMA");
+          parts.discharge=[response.data[0].id];
+          partsMap.set(liquidIndex,parts);
+        }
+      }
     //제약식 0)가격으로 판단하기 전에 살아남은 discharge중 BARREL 이나 Cartridge 가 있으면 parts.supply를 비운다
     if(parts.discharge.length>0){
       for(let index=0;index <parts.discharge.length;index++)
